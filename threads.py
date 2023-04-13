@@ -2,6 +2,7 @@
 from timeit import default_timer
 import threading
 
+
 class Memoria:
     def __init__(self, menu):
         self.PC = 0
@@ -20,10 +21,10 @@ class Memoria:
         value = self.memoria[n]
         self.memoria[n] = valor+value
 
-    def total(self, tiempo_clientes):
+    def total(self):
         cuentas = ""
         for i in range(0,len(self.memoria)):
-            cuentas =cuentas + "El precio total a pagar por el cliente " + str(i) +" es: " + str(self.memoria[i]) + ". \nSu tiempo fue de "+ str(tiempo_clientes[i])  +" Segundos\n\n"
+            cuentas =cuentas + "El precio total a pagar por el cliente " + str(i) +" es: " + str(self.memoria[i]) + ". \n"
         return cuentas
     
     def resta(self, num1,  num2):
@@ -85,18 +86,20 @@ class Memoria:
             print("IndexError:",error_message)
     
     def imprimirMenu(self):
-            tiempos_clientes = {}
+            inicioTotal = int(default_timer())
             clientes = True
             mas_clientes = True
             num_clientes = 1
             dict_clientes = {}
             cliente_actual = 0
-            quantum = 30
+            
             def interactuar_con_usuario(cliente_actual):
                 inicio = int(default_timer())
                 fin = 0
-                while fin < quantum:
-                    dict_clientes[cliente_actual] = "no"                    
+                while fin < 30:
+                    dict_clientes[cliente_actual] = "no"
+                    medio = int(default_timer())
+                    fin= medio-inicio
                     print("**************cliente " + str(cliente_actual) +"****************")
                     print("*******************menu*********************")
                     lista_productos=list(map(lambda x: x["producto"], productos))
@@ -120,16 +123,13 @@ class Memoria:
                             except ValueError as e:
                                 print(e)
                         self.IR("0100", price, cantidad,cliente_actual)
-                    medio = int(default_timer())
-                    fin= medio-inicio
-                    if(tiempos_clientes.get(cliente_actual is not None)):
-                        tiempos_clientes[cliente_actual] = tiempos_clientes[cliente_actual] + fin
-                    else:
-                        tiempos_clientes[cliente_actual] = fin
-                        
+
             while clientes:
+                # Creamos un hilo para la interacción del usuario
                 hilo_usuario = threading.Thread(target=interactuar_con_usuario, args=(cliente_actual,))
                 hilo_usuario.start()
+                
+                # Esperamos a que el hilo termine su ejecución
                 hilo_usuario.join()
 
                 if(mas_clientes):
@@ -144,7 +144,6 @@ class Memoria:
                 else:
                     clientes = self.validarFinCiclo(dict_clientes, num_clientes)
                     cliente_actual = self.validarClienteActual(dict_clientes, num_clientes)
-            print(self.total(tiempos_clientes)) 
 
     def validarFinCiclo(self, dict_clientes, num_clientes):
         for i in range(0,num_clientes):
@@ -190,9 +189,8 @@ productos =[
 def ejecutar():
     memoria = Memoria(productos)
     memoria.imprimirMenu()
+    print(memoria.total())
 
 
 if __name__ == '__main__':
     ejecutar()
-
-
