@@ -3,10 +3,9 @@ from timeit import default_timer
 import threading
 
 class Memoria:
-    def __init__(self, menu):
+    def __init__(self):
         self.PC = 0
         self.memoria = [0]
-        self.menu = menu
 
     def fetch(self):
         self.PC += 1
@@ -19,12 +18,6 @@ class Memoria:
     def agregar(self,n,valor):
         value = self.memoria[n]
         self.memoria[n] = valor+value
-
-    def total(self, tiempo_clientes):
-        cuentas = ""
-        for i in range(0,len(self.memoria)):
-            cuentas =cuentas + "El precio total a pagar por el cliente " + str(i) +" es: " + str(self.memoria[i]) + ". \nSu tiempo fue de "+ str(tiempo_clientes[i])  +" Segundos\n\n"
-        return cuentas
     
     def resta(self, num1,  num2):
         resultado = int(num1) - int(num2)
@@ -84,112 +77,33 @@ class Memoria:
         elif error ==IndexError:
             print("IndexError:",error_message)
     
-    def imprimirMenu(self):
-            tiempos_clientes = {}
-            clientes = True
-            mas_clientes = True
-            num_clientes = 1
-            dict_clientes = {}
-            cliente_actual = 0
-            quantum = 30
-            def interactuar_con_usuario(cliente_actual):
-                inicio = int(default_timer())
-                fin = 0
-                while fin < quantum:
-                    dict_clientes[cliente_actual] = "no"                    
-                    print("**************cliente " + str(cliente_actual) +"****************")
-                    print("*******************menu*********************")
-                    lista_productos=list(map(lambda x: x["producto"], productos))
-                    for i in lista_productos:
-                        print(i)
-                    print("salir\n********************************************")
-                    eleccion = input("Ingrese el nombre del producto a ordenar\n").lower().rstrip()
-                    if eleccion=="salir": 
-                        dict_clientes[cliente_actual] = "si"
-                        break
-                    item = list(filter(lambda x:  x["producto"]==eleccion,productos))
-                    if(len(item)==0):
-                        self.interruptions(IndexError, "El producto seleccionado no esta en el menu")
+    def round_robin(self, procesos, quantum):
+        tiempo_total = 0
+        procesos_restantes = len(procesos)
+        cola_procesos = procesos.copy()
+        while procesos_restantes > 0:
+            for i in range(len(cola_procesos)):
+                if cola_procesos[i]['tiempo'] > 0:
+                    if cola_procesos[i]['tiempo'] > quantum:
+                        tiempo_total += quantum
+                        cola_procesos[i]['tiempo'] -= quantum
                     else:
-                        price=dict(item[0])["precio"]
-                        while(True):
-                            try:
-                                cantidad = int(input("Ingrese la cantidad que desea ordenar\n"))
-                                if (type(5)) == (type(cantidad)):
-                                    break
-                            except ValueError as e:
-                                print(e)
-                        self.IR("0100", price, cantidad,cliente_actual)
-                    medio = int(default_timer())
-                    fin= medio-inicio
-                    if(tiempos_clientes.get(cliente_actual is not None)):
-                        tiempos_clientes[cliente_actual] = tiempos_clientes[cliente_actual] + fin
-                    else:
-                        tiempos_clientes[cliente_actual] = fin
-                        
-            while clientes:
-                hilo_usuario = threading.Thread(target=interactuar_con_usuario, args=(cliente_actual,))
-                hilo_usuario.start()
-                hilo_usuario.join()
-
-                if(mas_clientes):
-                    respuesta = input("¿Hay mas clientes?\nSi\nNo\n")
-                    if respuesta.lower()=="si":
-                        num_clientes+=1
-                        cliente_actual+=1
-                    else:
-                        mas_clientes=False
-                        clientes = self.validarFinCiclo(dict_clientes, num_clientes)
-                        cliente_actual = self.validarClienteActual(dict_clientes, num_clientes)
+                        tiempo_total += cola_procesos[i]['tiempo']
+                        cola_procesos[i]['tiempo'] = 0
+                        procesos_restantes -= 1
                 else:
-                    clientes = self.validarFinCiclo(dict_clientes, num_clientes)
-                    cliente_actual = self.validarClienteActual(dict_clientes, num_clientes)
-            print(self.total(tiempos_clientes)) 
+                    procesos_restantes -= 1
+        return tiempo_total
 
-    def validarFinCiclo(self, dict_clientes, num_clientes):
-        for i in range(0,num_clientes):
-            if (dict_clientes[i]).lower()=="no":
-                return True
-        return False    
-
-    def validarClienteActual(self, dict_clientes, num_clientes):        
-        for i in range(0,num_clientes):
-            if dict_clientes[i]=="no":
-                return i
-productos =[
-    {
-        "producto": "hamburguesa",
-        "precio": 20000 
-    },
-    {
-        "producto": "perro",
-        "precio": 18000 
-    },
-    {
-        "producto": "salchipapas",
-        "precio": 14000 
-    },
-    {
-        "producto": "pizza",
-        "precio": 25000 
-    },
-    {
-        "producto": "arepa rellena",
-        "precio": 11000 
-    },    
-    {
-        "producto": "perra",
-        "precio": 19000 
-    },
-    {
-        "producto": "taco",
-        "precio": 5000 
-    }
-]
+procesos = [{'nombre': 'C1', 'tiempo': 8},
+            {'nombre': 'C2', 'tiempo': 4},
+            {'nombre': 'C3', 'tiempo': 9},
+            {'nombre': 'C4', 'tiempo': 5},
+            {'nombre': 'C5', 'tiempo': 2}]
 
 def ejecutar():
-    memoria = Memoria(productos)
-    memoria.imprimirMenu()
+    memoria = Memoria()
+    print(memoria.round_robin(procesos, 5))
 
 
 if __name__ == '__main__':
